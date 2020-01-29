@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.openshift.evg.roadshow.rest.gateway.ApiGatewayController;
 import com.openshift.evg.roadshow.rest.gateway.DataGatewayController;
-import com.openshift.evg.roadshow.rest.gateway.helpers.EndpointRegistrar;
 import com.openshift.evg.roadshow.rest.gateway.model.Backend;
 
 /**
@@ -30,7 +29,7 @@ import com.openshift.evg.roadshow.rest.gateway.model.Backend;
  */
 @RestController
 @RequestMapping("/ws/backends")
-public class BackendsController implements EndpointRegistrar {
+public class BackendsController {
 
     private static final Logger logger = LoggerFactory.getLogger(BackendsController.class);
 
@@ -46,24 +45,11 @@ public class BackendsController implements EndpointRegistrar {
     @Autowired
     private DataGatewayController dataGateway;
     
-    @Autowired
-    private ServiceWatcher serviceWatcher;
-    
-    @Autowired
-    private RouteWatcher routeWatcher;
-    
     private Map<String, Backend> registeredBackends = new HashMap<String, Backend>();
     
-    /**
-     * This method is used to start monitoring for services
-     */
-    @RequestMapping(method = RequestMethod.GET, value = "/init")
-    @PostConstruct
-    public void init() {
-    	routeWatcher.init(this);
-    	serviceWatcher.init(this);
-    }
-
+    @Value("${nationalparks.url}")
+    private String endpointUrl;
+    
     /**
      * @param
      * @return
@@ -74,11 +60,7 @@ public class BackendsController implements EndpointRegistrar {
 
         Backend newBackend = null;
         
-        String endpointUrl = routeWatcher.getUrl(endpoint); // try to find a route for endpoint
-        if (endpointUrl == null || endpointUrl.trim().equals("")) { 
-        	endpointUrl = serviceWatcher.getUrl(endpoint); // otherwise, find a service for endpoint
-        }
-        
+        logger.info(endpointUrl);
         // Query for backend data.
         if (endpoint != null) {
         	if ((newBackend = apiGateway.getFromRemote(endpointUrl)) != null) {
@@ -119,6 +101,8 @@ public class BackendsController implements EndpointRegistrar {
     @RequestMapping(method = RequestMethod.GET, value = "/list", produces = "application/json")
     public List<Backend> getAll() {
         logger.info("Backends: getAll");
+        if (registeredBackends.isEmpty())
+        	this.register("nationalparks");
         return new ArrayList<Backend>(registeredBackends.values());
     }
 }
