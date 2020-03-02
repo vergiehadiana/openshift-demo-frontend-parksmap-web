@@ -30,7 +30,7 @@
       "description": "Git source URI for application",
       "displayName": "Git source repository",
       "name": "GIT_URI",
-      "value": "https://github.com/adithaha/parksmap-web.git",
+      "value": "https://github.com/vergiehadiana/parksmap
       "required": true
     },
     {
