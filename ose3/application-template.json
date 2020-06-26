@@ -139,8 +139,7 @@
           "sourceStrategy": {
             "from": {
               "kind": "ImageStreamTag",
-              "name": "openjdk18-openshift:latest",
-              "namespace": "vergie-dev"
+               "name": "s2i-java:latest"
             },
             "env": [
               {
