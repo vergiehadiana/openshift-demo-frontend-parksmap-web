@@ -1,0 +1,45 @@
+def templateName = 'parksmap'
+
+node {
+    stage('Build and Deploy to DEV') {
+        openshift.withCluster() {
+            openshift.withProject("vergie-dev") {
+                echo "Using project: ${openshift.project()}"
+	            openshift.selector('bc', templateName).startBuild("--wait=true")
+            }
+        }
+    }
+    stage('Deploy to DEV') {
+        openshift.withCluster() {
+            openshift.withProject("vergie-dev") {
+                openshift.selector('dc', templateName).rollout()
+            }
+        }
+    }
+    stage('Promote to TEST') {
+        input message: "Promote to QA - STAGING ?"
+        openshift.withCluster() {
+            openshift.withProject("vergie-dev") {
+                echo "Using project: ${openshift.project()}"
+	            openshift.tag("${templateName}:latest", "${templateName}:promoteToQA") 
+            }
+            openshift.withProject("vergie-staging") {
+                echo "Using project: ${openshift.project()}"
+	            openshift.selector('dc', templateName).rollout()
+            }
+        }
+    }
+    stage('Promote to PROD') {
+        input message: "Promote to PROD ?"
+        openshift.withCluster() {
+            openshift.withProject("vergie-dev") {
+                echo "Using project: ${openshift.project()}"
+	            openshift.tag("${templateName}:promoteToQA", "${templateName}:promoteToProd") 
+            }
+            openshift.withProject("vergie-prod") {
+                echo "Using project: ${openshift.project()}"
+	            def dc = openshift.selector('dc', templateName).rollout()
+            }
+        }
+    }
+}
